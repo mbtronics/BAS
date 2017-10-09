@@ -19,15 +19,19 @@ def open_lock(gpio):
     set_gpio(gpio, 0)
 
 
-def verify(intcode, url, gpio):
-    url = url + "/" + str(intcode)
-    print urllib2.urlopen(url).read()
-    open_lock(gpio)
+def verify(intcode, url, gpio, key, lock):
+    url = "%s/lock/%s/%s/%s" % (url, key, lock, intcode)
+    # raises exception on http authentication error
+    verify_key = urllib2.urlopen(url).read()
+    if verify_key==key:
+        open_lock(gpio)
+    else:
+        print "got invalid key"
 
 
-def get_permission(intcode, serverurl, backupurl, gpio):
+def get_permission(intcode, serverurl, backupurl, gpio, key, lock):
     try:
-        verify(intcode, serverurl, gpio)
+        verify(intcode, serverurl, gpio, key, lock)
     except urllib2.HTTPError, e:
         print 'HTTPError = ' + str(e.code)
     except urllib2.URLError, e:
@@ -37,7 +41,7 @@ def get_permission(intcode, serverurl, backupurl, gpio):
         if backupurl:
             try:
                 print "trying backup server url"
-                verify(intcode, backupurl, gpio)
+                verify(intcode, backupurl, gpio, key, lock)
             except Exception, e:
                 raise e
 
@@ -54,9 +58,11 @@ def main(argv):
     serverurl = None
     backupurl = None
     gpio = None
+    key = None
+    lock = None
 
     try:
-        opts, args = getopt.getopt(argv, "hi:u:b:g:", ["input=", "url=", "backupurl=", "gpio="])
+        opts, args = getopt.getopt(argv, "hi:u:b:g:k:l:", ["input=", "url=", "backupurl=", "gpio=", "key=", "lock="])
     except getopt.GetoptError:
         help(sys.argv[0])
         sys.exit(2)
@@ -73,8 +79,12 @@ def main(argv):
             backupurl = arg
         elif opt in ("-g", "--gpio"):
             gpio = arg
+        elif opt in ("-k", "--key"):
+            key = arg
+        elif opt in ("-l", "--lock"):
+            lock = arg
 
-    if not devicename or not serverurl:
+    if not devicename or not serverurl or not key:
         help(sys.argv[0])
         sys.exit(2)
 
@@ -108,7 +118,7 @@ def main(argv):
                     print "invalid code"
                 else:
                     print intcode
-                    get_permission(intcode, serverurl, backupurl, gpio)
+                    get_permission(intcode, serverurl, backupurl, gpio, key, lock)
                 code = ""
 
 
