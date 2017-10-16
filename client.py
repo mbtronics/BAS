@@ -21,7 +21,6 @@ def open_lock(gpio):
 
 def verify(intcode, url, gpio, key, lock):
     url = "%s/auth/lock/%s/%s/%s" % (url, key, lock, intcode)
-    print url
     # raises exception on http authentication error
     verify_key = urllib2.urlopen(url).read()
     if verify_key==key:
