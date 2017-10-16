@@ -20,7 +20,8 @@ def open_lock(gpio):
 
 
 def verify(intcode, url, gpio, key, lock):
-    url = "%s/lock/%s/%s/%s" % (url, key, lock, intcode)
+    url = "%s/auth/lock/%s/%s/%s" % (url, key, lock, intcode)
+    print url
     # raises exception on http authentication error
     verify_key = urllib2.urlopen(url).read()
     if verify_key==key:
@@ -50,7 +51,7 @@ def get_permission(intcode, serverurl, backupurl, gpio, key, lock):
 
 
 def help(cmd):
-    print cmd + '-i <input device> -u <server url> -b <backup server url> -g <gpio number>'
+    print cmd + '-i <input device> -u <server url> -b <backup server url> -g <gpio number> -k <secret key> -l <lock number>'
 
 
 def main(argv):
@@ -84,7 +85,7 @@ def main(argv):
         elif opt in ("-l", "--lock"):
             lock = arg
 
-    if not devicename or not serverurl or not key:
+    if not devicename or not serverurl or not key or not lock:
         help(sys.argv[0])
         sys.exit(2)
 
