@@ -33,7 +33,7 @@ class Gpio:
         else:
             print("gpio %s: %s" % (self.number, value))
 
-    def pulse(self, pulse_time_s=0.1):
+    def pulse(self, pulse_time_s=1):
         self.set(1)
         time.sleep(pulse_time_s)
         self.set(0)
@@ -108,6 +108,7 @@ class Reader:
 
 class LockIdFilter(logging.Filter):
     def __init__(self, lock):
+        logging.Filter.__init__(self)
         self._lock = lock
 
     def filter(self, record):
