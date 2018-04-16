@@ -16,7 +16,7 @@ class Gpio:
 
         try:
             with open('/sys/class/gpio/export', 'w') as export_file:
-                export_file.write(self.number)
+                export_file.write(str(self.number))
         except:
             pass
 
