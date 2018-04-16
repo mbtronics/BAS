@@ -3,66 +3,133 @@ import evdev
 import sys, getopt
 import urllib2
 import time
+import logging
+from logging.handlers import RotatingFileHandler
+from logging import Formatter
 
 
-def set_gpio(gpio, value):
-    if gpio:
-        with open('/sys/class/gpio/gpio' + gpio + '/value', 'w') as value_file:
-            value_file.write(str(value))
+class Gpio:
+    def __init__(self, number):
+
+        self.number = int(number)
+        self._open = False
+
+        try:
+            with open('/sys/class/gpio/export', 'w') as export_file:
+                export_file.write(self.number)
+
+            with open('/sys/class/gpio/gpio' + str(self.number) + '/direction', 'w') as direction_file:
+                direction_file.write('out')
+        except Exception as e:
+            print(e)
+            pass
+        else:
+            self._open = True
+
+    def set(self, value):
+        if self._open:
+            with open('/sys/class/gpio/gpio' + str(self.number) + '/value', 'w') as value_file:
+                value_file.write(str(value))
+        else:
+            print("gpio %s: %s" % (self.number, value))
+
+    def pulse(self, pulse_time_s=0.1):
+        self.set(1)
+        time.sleep(pulse_time_s)
+        self.set(0)
 
 
-def open_lock(gpio):
-    print "open"
-    set_gpio(gpio, 1)
-    time.sleep(2)
-    print "close"
-    set_gpio(gpio, 0)
+class Lock:
+    def __init__(self, id, gpio):
+        self.id = int(id)
+        self._gpio = gpio
+
+        if self.id is None:
+            raise Exception('invalid id: %s' % self.id)
+
+        if self._gpio is None:
+            raise Exception('invalid gpio: %s' % self._gpio)
+
+    def open(self):
+        self._gpio.pulse()
 
 
-def verify(intcode, url, gpio, key, lock):
-    url = "%s/auth/lock/%s/%s/%s" % (url, key, lock, intcode)
-    # raises exception on http authentication error
-    verify_key = urllib2.urlopen(url).read()
-    if verify_key==key:
-        open_lock(gpio)
-    else:
-        print "got invalid key"
+class Authenticator:
+    def __init__(self, url, secret_key, backup_url=None):
+        self._url = url
+        self._secret_key = secret_key
+        self._backup_url = backup_url
+
+        if not self._url:
+            raise Exception('invalid url: %s' % self._url)
+
+        if not self._secret_key:
+            raise Exception('invalid secret key: %s' % self._secret_key)
+
+    def auth(self, lock, user_id):
+        url = "%s/auth/lock/%s/%s/%s" % (self._url, self._secret_key, lock.id, user_id)
+
+        try:
+            # raises exception on http authentication error
+            verify_key = urllib2.urlopen(url).read()
+        except urllib2.HTTPError, e:
+            print 'HTTPError = ' + str(e.code)
+        except urllib2.URLError, e:
+            print 'URLError = ' + str(e.reason)
+        else:
+            if verify_key == self._secret_key:
+                return True
+
+        return False
 
 
-def get_permission(intcode, serverurl, backupurl, gpio, key, lock):
-    try:
-        verify(intcode, serverurl, gpio, key, lock)
-    except urllib2.HTTPError, e:
-        print 'HTTPError = ' + str(e.code)
-    except urllib2.URLError, e:
-        print 'URLError = ' + str(e.reason)
+class Reader:
+    def __init__(self, path):
+        self._dev = evdev.InputDevice(path)
+        self._dev.grab()
 
-        # only when given server does not exist
-        if backupurl:
-            try:
-                print "trying backup server url"
-                verify(intcode, backupurl, gpio, key, lock)
-            except Exception, e:
-                raise e
+    def read(self):
+        keys = "X^1234567890XXXXqwertzuiopXX\nXasdfghjklXXXXXyxcvbnmXXXXXXXXXXXXXXXXXXXXXXX"
+        code = ""
+        for event in self._dev.read_loop():
+            if event.type == 1 and event.value == 1:
+                if event.code != 28:
+                    code += keys[event.code]
+                if event.code == 28:
+                    try:
+                        user_id = int(code)
+                    except:
+                        print "invalid code"
+                    else:
+                        yield user_id
 
-    except Exception, e:
-        raise e
+                    code = ""
 
 
-def help(cmd):
-    print cmd + '-i <input device> -u <server url> -b <backup server url> -g <gpio number> -k <secret key> -l <lock number>'
+class LockIdFilter(logging.Filter):
+    def __init__(self, lock):
+        self._lock = lock
 
+    def filter(self, record):
+        if self._lock:
+            record.lock_id = str(self._lock.id)
+        else:
+            record.lock_id = ""
+        return True
 
 def main(argv):
     devicename = None
     serverurl = None
-    backupurl = None
-    gpio = None
+    gpio_number = 0
     key = None
     lock = None
+    logfile = None
+
+    def help(cmd):
+        print cmd + '-i <input device> -u <server url> -g <gpio number> -k <secret key> -l <lock number> -o <logfile>'
 
     try:
-        opts, args = getopt.getopt(argv, "hi:u:b:g:k:l:", ["input=", "url=", "backupurl=", "gpio=", "key=", "lock="])
+        opts, args = getopt.getopt(argv, "hi:u:b:g:k:l:o:", ["input=", "url=", "gpio=", "key=", "lock=", "logfile="])
     except getopt.GetoptError:
         help(sys.argv[0])
         sys.exit(2)
@@ -75,52 +142,49 @@ def main(argv):
             devicename = arg
         elif opt in ("-u", "--url"):
             serverurl = arg
-        elif opt in ("-b", "--backup"):
-            backupurl = arg
         elif opt in ("-g", "--gpio"):
-            gpio = arg
+            gpio_number = arg
         elif opt in ("-k", "--key"):
             key = arg
         elif opt in ("-l", "--lock"):
             lock = arg
+        elif opt in ("-o", "--logfile"):
+            logfile = arg
 
-    if not devicename or not serverurl or not key or not lock:
+    if not devicename \
+            or not serverurl \
+            or not key \
+            or not lock \
+            or not logfile:
         help(sys.argv[0])
         sys.exit(2)
 
-    dev = evdev.InputDevice(devicename)
-    dev.grab()
-    print dev
-    print "server url: %s" % serverurl
-    print "server url backup: %s" % backupurl
+    # create lock
+    lock = Lock(lock, Gpio(gpio_number))
 
-    if gpio:
-        print "gpio: " + gpio
-        try:
-            with open('/sys/class/gpio/export', 'w') as export_file:
-                export_file.write(gpio)
-        except:
-            pass
+    # create logger
+    logger = logging.getLogger("Rotating Log")
+    logger.setLevel(logging.INFO)
+    handler = RotatingFileHandler(logfile, maxBytes=1044480, backupCount=10)
+    handler.setFormatter(Formatter('''%(asctime)s %(levelname)s %(lock_id)s %(pathname)s:%(lineno)d (%(funcName)s) : %(message)s'''))
+    logger.addHandler(handler)
+    logger.addFilter(LockIdFilter(lock))
 
-        with open('/sys/class/gpio/gpio' + gpio + '/direction', 'w') as direction_file:
-            direction_file.write('out')
+    # create authenticator
+    logger.info("server url: %s" % serverurl)
+    authenticator = Authenticator(serverurl, key)
 
-    keys = "X^1234567890XXXXqwertzuiopXX\nXasdfghjklXXXXXyxcvbnmXXXXXXXXXXXXXXXXXXXXXXX"
-    code = ""
-    for event in dev.read_loop():
-        if event.type == 1 and event.value == 1:
-            if event.code!=28:
-                code += keys[event.code]
-            if event.code==28:
-                try:
-                    intcode = int(code)
-                except:
-                    print "invalid code"
-                else:
-                    print intcode
-                    get_permission(intcode, serverurl, backupurl, gpio, key, lock)
-                code = ""
+    # create reader
+    reader = Reader(devicename)
+
+    # read loop
+    for user_id in reader.read():
+        if authenticator.auth(lock, user_id):
+            logger.info("%s: valid" % user_id)
+            lock.open()
+        else:
+            logger.info("%s: invalid" % user_id)
 
 
 if __name__ == "__main__":
-   main(sys.argv[1:])
+    main(sys.argv[1:])
