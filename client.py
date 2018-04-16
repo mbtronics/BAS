@@ -17,7 +17,10 @@ class Gpio:
         try:
             with open('/sys/class/gpio/export', 'w') as export_file:
                 export_file.write(self.number)
+        except:
+            pass
 
+        try:
             with open('/sys/class/gpio/gpio' + str(self.number) + '/direction', 'w') as direction_file:
                 direction_file.write('out')
         except Exception as e:
