@@ -36,7 +36,7 @@ class Gpio:
         else:
             print("gpio %s: %s" % (self.number, value))
 
-    def pulse(self, pulse_time_s=0.1):
+    def pulse(self, pulse_time_s=1):
         self.set(1)
         time.sleep(pulse_time_s)
         self.set(0)
