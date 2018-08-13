@@ -23,3 +23,4 @@ def create_logger(logfile, lock):
     handler.setFormatter(Formatter('''%(asctime)s %(levelname)s %(lock_id)s %(pathname)s:%(lineno)d (%(funcName)s) : %(message)s'''))
     logger.addHandler(handler)
     logger.addFilter(LockIdFilter(lock))
+    return logger
