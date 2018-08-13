@@ -1,11 +1,11 @@
 import urllib2
+from uuid import getnode as get_mac
 
 
 class Authenticator:
-    def __init__(self, url, secret_key, backup_url=None):
+    def __init__(self, url, secret_key):
         self._url = url
         self._secret_key = secret_key
-        self._backup_url = backup_url
 
         if not self._url:
             raise Exception('invalid url: %s' % self._url)
@@ -15,6 +15,26 @@ class Authenticator:
 
     def auth(self, lock, user_id):
         url = "%s/auth/lock/%s/%s/%s" % (self._url, self._secret_key, lock.id, user_id)
+
+        try:
+            # raises exception on http authentication error
+            verify_key = urllib2.urlopen(url).read()
+        except urllib2.HTTPError, e:
+            print 'HTTPError = ' + str(e.code)
+        except urllib2.URLError, e:
+            print 'URLError = ' + str(e.reason)
+        else:
+            if verify_key == self._secret_key:
+                return True
+
+        return False
+
+    def register(self, lock):
+        mac = get_mac()
+        print(mac)
+
+        url = "%s/auth/lock/register/%s/%s/%s" % (self._url, mac, self._secret_key, lock.id)
+        print(url)
 
         try:
             # raises exception on http authentication error
