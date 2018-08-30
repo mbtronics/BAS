@@ -10,4 +10,4 @@ class Lock:
             raise Exception('invalid gpio: %s' % self._gpio)
 
     def open(self, pulse_time_s=1):
-        self._gpio.pulse(pulse_time_s=pulse_time_s)
+        self._gpio.pulse(pulse_time_s)
