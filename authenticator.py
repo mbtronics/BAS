@@ -1,3 +1,4 @@
+import json
 import urllib2
 
 
@@ -27,4 +28,16 @@ class Authenticator:
             if verify_key == self._secret_key:
                 return True
 
-        return False
+    def open_all(self, lock, user_id):
+        url = "%s/auth/lock/open_all/%s/%s/%s" % (self._url, self._secret_key, lock.id, user_id)
+
+        try:
+            # raises exception on http authentication error
+            json_dict = json.loads(urllib2.urlopen(url).read())
+        except urllib2.HTTPError, e:
+            print 'HTTPError = ' + str(e.code)
+        except urllib2.URLError, e:
+            print 'URLError = ' + str(e.reason)
+        else:
+            if json_dict['verify_key'] == self._secret_key:
+                return json_dict['state']

@@ -1,6 +1,7 @@
 import logging
+import sys
+from logging import Formatter, StreamHandler
 from logging.handlers import RotatingFileHandler
-from logging import Formatter
 
 
 class LockIdFilter(logging.Filter):
@@ -16,10 +17,20 @@ class LockIdFilter(logging.Filter):
         return True
 
 
-def create_logger(logfile, lock):
+def create_file_logger(logfile, lock):
     logger = logging.getLogger("Rotating Log")
     logger.setLevel(logging.INFO)
     handler = RotatingFileHandler(logfile, maxBytes=1044480, backupCount=10)
+    handler.setFormatter(Formatter('''%(asctime)s %(levelname)s %(lock_id)s %(pathname)s:%(lineno)d (%(funcName)s) : %(message)s'''))
+    logger.addHandler(handler)
+    logger.addFilter(LockIdFilter(lock))
+    return logger
+
+
+def create_stdout_logger(lock):
+    logger = logging.getLogger("Stdout Log")
+    logger.setLevel(logging.INFO)
+    handler = StreamHandler(sys.stdout)
     handler.setFormatter(Formatter('''%(asctime)s %(levelname)s %(lock_id)s %(pathname)s:%(lineno)d (%(funcName)s) : %(message)s'''))
     logger.addHandler(handler)
     logger.addFilter(LockIdFilter(lock))
