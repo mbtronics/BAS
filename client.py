@@ -95,7 +95,7 @@ def main(argv):
                 if rgb_led:
                     rgb_led.green(1)
 
-                lock.open(1)
+                lock.open(pulse_time_s=1)
                 logger.info("%s: valid" % user_id)
 
                 if rgb_led:
