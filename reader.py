@@ -1,8 +1,8 @@
-import evdev
 
 
 class Reader:
     def __init__(self, path):
+        import evdev
         self._dev = evdev.InputDevice(path)
         self._dev.grab()
 

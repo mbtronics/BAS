@@ -15,29 +15,25 @@ class Authenticator:
             raise Exception('invalid secret key: %s' % self._secret_key)
 
     def auth(self, lock, user_id):
-        url = "%s/auth/lock/%s/%s/%s" % (self._url, self._secret_key, lock.id, user_id)
+        url = "%s/auth" % self._url
 
         try:
-            # raises exception on http authentication error
-            verify_key = urllib2.urlopen(url).read()
+            req = urllib2.Request(url)
+            req.add_header('Content-Type', 'application/json')
+            response = urllib2.urlopen(req, json.dumps({
+                "key": self._secret_key,
+                "lock_id": lock.id,
+                "keycard": user_id
+            })).read()
+
         except urllib2.HTTPError, e:
             print 'HTTPError = ' + str(e.code)
         except urllib2.URLError, e:
             print 'URLError = ' + str(e.reason)
         else:
-            if verify_key == self._secret_key:
+            data = json.loads(response)
+            if 'result' in data and data['result'] == "ok":
                 return True
 
     def open_all(self, lock, user_id):
-        url = "%s/auth/lock/open_all/%s/%s/%s" % (self._url, self._secret_key, lock.id, user_id)
-
-        try:
-            # raises exception on http authentication error
-            json_dict = json.loads(urllib2.urlopen(url).read())
-        except urllib2.HTTPError, e:
-            print 'HTTPError = ' + str(e.code)
-        except urllib2.URLError, e:
-            print 'URLError = ' + str(e.reason)
-        else:
-            if json_dict['verify_key'] == self._secret_key:
-                return json_dict['state']
+        pass

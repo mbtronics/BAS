@@ -24,7 +24,7 @@ def main(argv):
     mode = 'single_lock'
 
     def help(cmd):
-        print cmd + '-i <input device> -u <server url> -g <gpio number> -k <secret key> -l <lock number> -o <logfile>'
+        print cmd + ' -i <input device> -u <server url> -g <gpio number> -k <secret key> -l <lock number> -o <logfile>'
 
     try:
         opts, args = getopt.getopt(argv, "hi:u:b:g:r:k:l:o:m:", ["input=", "url=", "gpio=", "rgb=", "key=", "lock=", "logfile=", "mode="])
