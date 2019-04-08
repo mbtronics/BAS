@@ -15,6 +15,15 @@ class Authenticator:
             raise Exception('invalid secret key: %s' % self._secret_key)
 
     def auth(self, lock, user_id):
+
+        try:
+            with open('cards.txt', 'r') as cards_file:
+                for card in cards_file:
+                    if user_id in card:
+                        return True
+        except:
+            pass
+
         url = "%s/auth/lock/%s/%s/%s" % (self._url, self._secret_key, lock.id, user_id)
 
         try:
