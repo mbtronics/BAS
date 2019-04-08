@@ -17,7 +17,7 @@ class Authenticator:
     def auth(self, lock, user_id):
 
         try:
-            with open('cards.txt', 'r') as cards_file:
+            with open('/root/cards.txt', 'r') as cards_file:
                 for card in cards_file:
                     if user_id in card:
                         return True
