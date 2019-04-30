@@ -1,4 +1,5 @@
 import time
+import os
 
 
 class Gpio:
@@ -7,20 +8,19 @@ class Gpio:
         self.number = int(number)
         self._open = False
 
-        try:
-            with open('/sys/class/gpio/export', 'w') as export_file:
-                export_file.write(str(self.number))
-        except:
-            pass
+        direction_file_name = '/sys/class/gpio/gpio' + str(self.number) + '/direction'
 
-        try:
-            with open('/sys/class/gpio/gpio' + str(self.number) + '/direction', 'w') as direction_file:
-                direction_file.write('out')
-        except Exception as e:
-            print(e)
-            pass
-        else:
-            self._open = True
+        if not os.path.isfile(direction_file_name):
+            try:
+                with open('/sys/class/gpio/export', 'w') as export_file:
+                    export_file.write(str(self.number))
+            except:
+                pass
+
+        with open(direction_file_name, 'w') as direction_file:
+            direction_file.write('out')
+
+        self._open = True
 
     def set(self, value):
         if self._open:
