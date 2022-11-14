@@ -42,7 +42,7 @@ class Authenticator:
 
         try:
             # raises exception on http authentication error
-            json_dict = json.loads(urllib.request.urlopen(url).read())
+            json_dict = json.loads(urllib.request.urlopen(url).read().decode())
         except urllib.error.HTTPError as e:
             print('HTTPError = ' + str(e.code))
         except urllib.error.URLError as e:
