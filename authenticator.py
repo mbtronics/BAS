@@ -1,5 +1,5 @@
 import json
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 
 class Authenticator:
@@ -28,11 +28,11 @@ class Authenticator:
 
         try:
             # raises exception on http authentication error
-            verify_key = urllib2.urlopen(url).read()
-        except urllib2.HTTPError, e:
-            print 'HTTPError = ' + str(e.code)
-        except urllib2.URLError, e:
-            print 'URLError = ' + str(e.reason)
+            verify_key = urllib.request.urlopen(url).read()
+        except urllib.error.HTTPError as e:
+            print('HTTPError = ' + str(e.code))
+        except urllib.error.URLError as e:
+            print('URLError = ' + str(e.reason))
         else:
             if verify_key == self._secret_key:
                 return True
@@ -42,11 +42,11 @@ class Authenticator:
 
         try:
             # raises exception on http authentication error
-            json_dict = json.loads(urllib2.urlopen(url).read())
-        except urllib2.HTTPError, e:
-            print 'HTTPError = ' + str(e.code)
-        except urllib2.URLError, e:
-            print 'URLError = ' + str(e.reason)
+            json_dict = json.loads(urllib.request.urlopen(url).read())
+        except urllib.error.HTTPError as e:
+            print('HTTPError = ' + str(e.code))
+        except urllib.error.URLError as e:
+            print('URLError = ' + str(e.reason))
         else:
             if json_dict['verify_key'] == self._secret_key:
                 return json_dict['state']

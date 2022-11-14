@@ -17,7 +17,7 @@ class Reader:
                     try:
                         user_id = int(code)
                     except:
-                        print "invalid code"
+                        print("invalid code")
                     else:
                         yield user_id
 
