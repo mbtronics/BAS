@@ -28,7 +28,7 @@ class Authenticator:
 
         try:
             # raises exception on http authentication error
-            verify_key = urllib.request.urlopen(url).read()
+            verify_key = urllib.request.urlopen(url).read().decode()
         except urllib.error.HTTPError as e:
             print('HTTPError = ' + str(e.code))
         except urllib.error.URLError as e:
