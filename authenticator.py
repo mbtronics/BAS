@@ -19,7 +19,7 @@ class Authenticator:
         try:
             with open('/etc/cards.txt', 'r') as cards_file:
                 for card in cards_file:
-                    if str(user_id) in card:
+                    if card.strip == user_id:
                         return True
         except:
             pass
