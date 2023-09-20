@@ -57,7 +57,7 @@ def main(argv):
         help(sys.argv[0])
         sys.exit(2)
 
-    if mode != 'single_lock' and mode != 'open_all':
+    if mode != 'single_lock':
         print('unknown mode %s' % mode)
         sys.exit(2)
 
@@ -110,27 +110,6 @@ def main(argv):
 
                 if rgb_led:
                     rgb_led.red(0)
-
-        elif mode == 'open_all':
-
-            state = authenticator.auth(lock, user_id, logger)
-            if state:
-                logger.info("%s: valid" % user_id)
-
-                if state == 'on':
-                    logger.info("all on")
-                    if rgb_led:
-                        rgb_led.green(1)
-                        rgb_led.red(0)
-                elif state == 'off':
-                    logger.info("all off")
-                    if rgb_led:
-                        rgb_led.green(0)
-                        rgb_led.red(1)
-                else:
-                    logger.info("unknown state: %s" % state)
-            else:
-                logger.info("%s: invalid" % user_id)
 
 
 if __name__ == "__main__":
