@@ -14,7 +14,7 @@ class Authenticator:
         if not self._secret_key:
             raise Exception('invalid secret key: %s' % self._secret_key)
 
-    def auth(self, lock, user_id):
+    def auth(self, lock, user_id, logger):
 
         try:
             with open('/etc/cards.txt', 'r') as cards_file:
@@ -30,9 +30,9 @@ class Authenticator:
             # raises exception on http authentication error
             verify_key = urllib.request.urlopen(url, timeout=5).read().decode()
         except urllib.error.HTTPError as e:
-            print('HTTPError = ' + str(e.code))
+            logger.error('HTTPError = ' + str(e.code))
         except urllib.error.URLError as e:
-            print('URLError = ' + str(e.reason))
+            logger.error('URLError = ' + str(e.reason))
         else:
             if verify_key == self._secret_key:
                 return True

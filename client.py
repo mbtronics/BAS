@@ -91,7 +91,7 @@ def main(argv):
     for user_id in reader.read():
         if mode == 'single_lock':
 
-            if authenticator.auth(lock, user_id):
+            if authenticator.auth(lock, user_id, logger):
                 if rgb_led:
                     rgb_led.green(1)
 
@@ -113,7 +113,7 @@ def main(argv):
 
         elif mode == 'open_all':
 
-            state = authenticator.auth(lock, user_id)
+            state = authenticator.auth(lock, user_id, logger)
             if state:
                 logger.info("%s: valid" % user_id)
 
