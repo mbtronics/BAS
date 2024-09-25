@@ -4,7 +4,7 @@ Description=BUDA::lab Authentication System
 [Service]
 WorkingDirectory=/home/buda/BAS
 User=root
-ExecStart=/usr/bin/python3 -u /home/buda/BAS/client.py -i /dev/input/by-path/platform-1c1b400.usb-usb-0:1:1.0-event-kbd -u https://www.budalab.be/bab -k BudaLabSuperLockKey -l LOCK_ID RGB -g LOCK_GPIO -o /var/log/bas.log
+ExecStart=/usr/bin/python3 -u /home/buda/BAS/client.py -i /dev/input/by-path/platform-1c1b400.usb-usb-0:1:1.0-event-kbd -u https://www.budalab.be/bab -k BudaLabSuperLockKey -l LOCK_ID -g LOCK_GPIO -o /var/log/bas.log
 Restart=always
 
 [Install]
