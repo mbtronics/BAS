@@ -1,7 +1,8 @@
 #!/bin/bash
 set -eu
 
-apt install python3
+apt install -y python3 python3-pip virtualenv
+virtualenv venv --python=python3
 pip install -r requirements.txt
 
 read -p "Lock GPIO (eg. 203): " LOCK_GPIO
