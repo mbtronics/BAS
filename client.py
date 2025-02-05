@@ -21,10 +21,10 @@ def main(argv):
     key = None
     lock_id = None
     logfile = None
-    mode = 'single_lock'
+    mode = 'pulse'
 
     def help(cmd):
-        print(cmd + '-i <input device> -u <server url> -g <gpio number> -k <secret key> -l <lock number> -o <logfile>')
+        print(cmd + '-i <input device> -u <server url> -g <gpio number> -m <mode> -k <secret key> -l <lock number> -o <logfile>')
 
     try:
         opts, args = getopt.getopt(argv, "hi:u:b:g:r:k:l:o:m:", ["input=", "url=", "gpio=", "rgb=", "key=", "lock=", "logfile=", "mode="])
@@ -57,7 +57,7 @@ def main(argv):
         help(sys.argv[0])
         sys.exit(2)
 
-    if mode != 'single_lock':
+    if mode not in ('pulse', 'toggle'):
         print('unknown mode %s' % mode)
         sys.exit(2)
 
@@ -89,19 +89,17 @@ def main(argv):
 
     # read loop
     for user_id in reader.read():
-        if mode == 'single_lock':
-
+        if mode == 'pulse':
             if authenticator.auth(lock, user_id, logger):
                 if rgb_led:
                     rgb_led.green(1)
 
-                lock.open(pulse_time_s=1)
+                lock.pulse(pulse_time_s=1)
                 logger.info("%s: valid" % user_id)
 
                 if rgb_led:
                     rgb_led.green(0)
             else:
-
                 if rgb_led:
                     rgb_led.red(1)
 
@@ -110,6 +108,8 @@ def main(argv):
 
                 if rgb_led:
                     rgb_led.red(0)
+        elif mode == 'toggle':
+            lock.toggle()
 
 
 if __name__ == "__main__":

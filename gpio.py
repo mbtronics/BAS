@@ -33,4 +33,3 @@ class Gpio:
         self.set(1)
         time.sleep(pulse_time_s)
         self.set(0)
-
