@@ -110,9 +110,11 @@ def main(argv):
 
                 if rgb_led:
                     rgb_led.red(0)
+
         elif mode == 'toggle':
-            logger.info("toggle lock")
+            #if authenticator.auth(lock, user_id, logger):
             lock.toggle()
+            logger.info("value: %s" % lock.value)
 
 
 if __name__ == "__main__":
