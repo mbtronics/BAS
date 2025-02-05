@@ -75,6 +75,7 @@ def main(argv):
 
     # create authenticator
     logger.info("server url: %s" % server_url)
+    logger.info("mode: %s" % mode)
     authenticator = Authenticator(server_url, key)
 
     # create reader
@@ -89,6 +90,7 @@ def main(argv):
 
     # read loop
     for user_id in reader.read():
+        logger.info(user_id)
         if mode == 'pulse':
             if authenticator.auth(lock, user_id, logger):
                 if rgb_led:
@@ -109,6 +111,7 @@ def main(argv):
                 if rgb_led:
                     rgb_led.red(0)
         elif mode == 'toggle':
+            logger.info("toggle lock")
             lock.toggle()
 
 
