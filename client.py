@@ -113,10 +113,14 @@ def main(argv):
 
         elif mode == 'toggle':
             if not lock.value:
+                # user needs access to this lock to enable it
                 if authenticator.auth(lock, user_id, logger):
                     lock.toggle()
             else:
+                # but user does not need access to disable it
                 lock.toggle()
+                authenticator.auth(lock, user_id, logger)
+
             logger.info("value: %s" % lock.value)
 
 
