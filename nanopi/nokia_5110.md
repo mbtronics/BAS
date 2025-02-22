@@ -1,4 +1,4 @@
-### Using Nokia 5110 LCD on NanoPi Neo
+### Using Nokia 5110 LCD (PCD8544) on NanoPi Neo
 - copy sys_info to /etc
 - in armbian-config:
   - System => Kernel => Manage device tree overlays => enable "spi-spidev"
@@ -8,12 +8,10 @@
 
 ```
 sudo apt update
-sudo apt install python-dev
+sudo apt install python3-dev
 sudo apt install python3-luma.lcd
-git clone https://github.com/angelijanos/RPi.GPIO_NP
 cd RPi.GPIO_NP
-python setup.py install
-sudo python setup.py install
+sudo python3 setup.py install
 ```
 
 - run the test script:
