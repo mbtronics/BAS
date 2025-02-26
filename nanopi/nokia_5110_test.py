@@ -5,7 +5,7 @@ import time
 import sys
 
 # Initialize the display
-serial = spi(port=0, device=0, gpio_DC=201, gpio_RST=1)
+serial = spi(port=0, device=0, bus_speed_hz=1000000, gpio_DC=201, gpio_RST=1)
 device = pcd8544(serial, rotate=0, gpio_LIGHT=200, active_low=False)
 device.backlight(False)
 
