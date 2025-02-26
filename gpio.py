@@ -28,6 +28,7 @@ class Gpio:
                 value_file.write(str(value))
         else:
             print("gpio %s: %s" % (self.number, value))
+        # print("gpio %s: %s" % (self.number, value))
 
     def pulse(self, pulse_time_s=1):
         self.set(1)

@@ -13,6 +13,10 @@ class Lock:
     def pulse(self, pulse_time_s=1):
         self._gpio.pulse(pulse_time_s=pulse_time_s)
 
-    def toggle(self):
-        self.value = 0 if self.value else 1
+    def on(self):
+        self.value = 1
+        self._gpio.set(self.value)
+
+    def off(self):
+        self.value = 0
         self._gpio.set(self.value)
