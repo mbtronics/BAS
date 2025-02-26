@@ -11,6 +11,7 @@ from lock import Lock
 from logger import create_file_logger, create_stdout_logger
 from reader import Reader
 from rgb_led import RgbLed
+from display import Display
 
 
 def main(argv):
@@ -23,12 +24,13 @@ def main(argv):
     lock_id = None
     logfile = None
     mode = 'pulse'
+    display_type = None
 
     def help(cmd):
         print(cmd + '-i <input device> -u <server url> -g <gpio number> -m <mode> -k <secret key> -l <lock number> -o <logfile>')
 
     try:
-        opts, args = getopt.getopt(argv, "hi:u:b:g:x:r:k:l:o:m:", ["input=", "url=", "gpio=", "rgb=", "key=", "lock=", "logfile=", "mode="])
+        opts, args = getopt.getopt(argv, "hi:u:b:g:x:r:k:l:o:m:d:", ["input=", "url=", "gpio=", "rgb=", "key=", "lock=", "logfile=", "mode="])
     except getopt.GetoptError:
         help(sys.argv[0])
         sys.exit(2)
@@ -55,6 +57,8 @@ def main(argv):
             logfile = arg
         elif opt in ("-m", "--mode"):
             mode = arg
+        elif opt in ("-d", "--display"):
+            display_type = arg
 
     if not server_url or not key:
         help(sys.argv[0])
@@ -95,11 +99,16 @@ def main(argv):
     if rgb:
         rgb_led = RgbLed(int(rgb[0]), int(rgb[1]), int(rgb[2]))
 
+    display = None
+    if display_type:
+        display = Display(display_type)
+
     # read loop
     for user_id in reader.read():
         logger.info(user_id)
         if mode == 'pulse':
-            if authenticator.auth(lock, user_id, logger):
+            access_granted, res = authenticator.auth(lock, user_id, logger)
+            if access_granted:
                 if rgb_led:
                     rgb_led.green(1)
 
@@ -120,8 +129,21 @@ def main(argv):
 
         elif mode == 'toggle':
             if not lock.value:
+
+                if display:
+                    display.backlight(True)
+                    display.get_canvas().rectangle(display.device.bounding_box, outline="white", fill="black")
+                    display.render()
+
                 # user needs access to this lock to enable it
-                if authenticator.auth(lock, user_id, logger):
+                access_granted, res = authenticator.auth(lock, user_id, logger)
+                if access_granted:
+
+                    if display:
+                        display.get_canvas().text((10, 10), "Welcome", fill="white", stroke_fill="black")
+                        display.get_canvas().text((10, 20), res['user_name'], fill="white", stroke_fill="black")
+                        display.render()
+
                     lock.on()
                     if lock2:
                         lock2.on()
@@ -132,8 +154,11 @@ def main(argv):
                     lock2.off()
                 authenticator.auth(lock, user_id, logger)
 
-            # logger.info("value: %s" % lock.value)
+                if display:
+                    display.backlight(False)
+                    display.clear()
 
+            # logger.info("value: %s" % lock.value)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
