@@ -1,6 +1,3 @@
-
-
-
 class Display:
     def __init__(self, type: str):
         if type != 'pcd8544':

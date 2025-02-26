@@ -1,3 +1,6 @@
+import asyncio
+
+
 class Lock:
     def __init__(self, id, gpio):
         self.id = int(id)
@@ -20,3 +23,7 @@ class Lock:
     def off(self):
         self.value = 0
         self._gpio.set(self.value)
+
+    async def delayed_off(self, time_s):
+        await asyncio.sleep(time_s)
+        self.off()

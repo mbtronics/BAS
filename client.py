@@ -2,6 +2,8 @@
 import getopt
 import sys
 import time
+import asyncio
+
 
 from authenticator import Authenticator
 from dummy_lock import DummyLock
@@ -12,9 +14,23 @@ from logger import create_file_logger, create_stdout_logger
 from reader import Reader
 from rgb_led import RgbLed
 from display import Display
+from datetime import timedelta
 
 
-def main(argv):
+async def counter_task(display: Display):
+    counter = 0
+    while True:
+        await asyncio.sleep(1)
+        counter += 1
+        try:
+            display.get_canvas().rectangle((10, 30, 50, 40), fill="black")
+            display.get_canvas().text((10, 30), str(timedelta(seconds=counter)), fill="white", stroke_fill="black")
+            display.render()
+        except Exception as e:
+            print(e)
+
+
+async def main(argv):
     device_name = None
     server_url = None
     gpio_number = None
@@ -75,6 +91,7 @@ def main(argv):
         lock = DummyLock(lock_id)
 
     lock2 = None
+    lock2_off_task = None
     if gpio2_number is not None:
         lock2 = Lock(lock_id, Gpio(gpio2_number))
 
@@ -100,11 +117,12 @@ def main(argv):
         rgb_led = RgbLed(int(rgb[0]), int(rgb[1]), int(rgb[2]))
 
     display = None
+    display_counter_task = None
     if display_type:
         display = Display(display_type)
 
     # read loop
-    for user_id in reader.read():
+    async for user_id in reader.read():
         logger.info(user_id)
         if mode == 'pulse':
             access_granted, res = authenticator.auth(lock, user_id, logger)
@@ -140,25 +158,33 @@ def main(argv):
                 if access_granted:
 
                     if display:
-                        display.get_canvas().text((10, 10), "Welcome", fill="white", stroke_fill="black")
-                        display.get_canvas().text((10, 20), res['user_name'], fill="white", stroke_fill="black")
+                        display.get_canvas().text((10, 5), "Welcome", fill="white", stroke_fill="black")
+                        display.get_canvas().text((10, 15), res['user_name'], fill="white", stroke_fill="black")
                         display.render()
 
                     lock.on()
                     if lock2:
+                        if lock2_off_task:
+                            lock2_off_task.cancel()
                         lock2.on()
+
+                    if display:
+                        display_counter_task = asyncio.create_task(counter_task(display))
             else:
                 # but user does not need access to disable it
                 lock.off()
                 if lock2:
-                    lock2.off()
+                    lock2_off_task = asyncio.create_task(lock2.delayed_off(10))
+
                 authenticator.auth(lock, user_id, logger)
 
                 if display:
                     display.backlight(False)
                     display.clear()
+                    display_counter_task.cancel()
 
             # logger.info("value: %s" % lock.value)
 
+
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    asyncio.run(main(sys.argv[1:]))
