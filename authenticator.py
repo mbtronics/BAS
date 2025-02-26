@@ -39,6 +39,8 @@ class Authenticator:
             logger.error('HTTPError = ' + str(e.code))
         except urllib.error.URLError as e:
             logger.error('URLError = ' + str(e.reason))
+        except TimeoutError as e:
+            logger.error('TimeoutError = ' + str(e))
         else:
             if verify_key == self._secret_key:
                 access_granted = True
