@@ -17,6 +17,7 @@ def main(argv):
     device_name = None
     server_url = None
     gpio_number = None
+    gpio2_number = None
     rgb = []
     key = None
     lock_id = None
@@ -27,7 +28,7 @@ def main(argv):
         print(cmd + '-i <input device> -u <server url> -g <gpio number> -m <mode> -k <secret key> -l <lock number> -o <logfile>')
 
     try:
-        opts, args = getopt.getopt(argv, "hi:u:b:g:r:k:l:o:m:", ["input=", "url=", "gpio=", "rgb=", "key=", "lock=", "logfile=", "mode="])
+        opts, args = getopt.getopt(argv, "hi:u:b:g:x:r:k:l:o:m:", ["input=", "url=", "gpio=", "rgb=", "key=", "lock=", "logfile=", "mode="])
     except getopt.GetoptError:
         help(sys.argv[0])
         sys.exit(2)
@@ -42,6 +43,8 @@ def main(argv):
             server_url = arg
         elif opt in ("-g", "--gpio"):
             gpio_number = arg
+        elif opt in ("-x", "--xtra_gpio"):
+            gpio2_number = arg
         elif opt in ("-r", "--rgb"):
             rgb.extend(arg.split(','))
         elif opt in ("-k", "--key"):
@@ -62,10 +65,14 @@ def main(argv):
         sys.exit(2)
 
     # create lock
-    if gpio_number:
+    if gpio_number is not None:
         lock = Lock(lock_id, Gpio(gpio_number))
     else:
         lock = DummyLock(lock_id)
+
+    lock2 = None
+    if gpio2_number is not None:
+        lock2 = Lock(lock_id, Gpio(gpio2_number))
 
     # create logger
     if logfile:
@@ -115,13 +122,17 @@ def main(argv):
             if not lock.value:
                 # user needs access to this lock to enable it
                 if authenticator.auth(lock, user_id, logger):
-                    lock.toggle()
+                    lock.on()
+                    if lock2:
+                        lock2.on()
             else:
                 # but user does not need access to disable it
-                lock.toggle()
+                lock.off()
+                if lock2:
+                    lock2.off()
                 authenticator.auth(lock, user_id, logger)
 
-            logger.info("value: %s" % lock.value)
+            # logger.info("value: %s" % lock.value)
 
 
 if __name__ == "__main__":
