@@ -29,6 +29,10 @@ async def counter_task(display: Display):
         except Exception as e:
             print(e)
 
+async def clear_display(display: Display):
+    await asyncio.sleep(5)
+    display.clear()
+
 
 async def main(argv):
     device_name = None
@@ -91,7 +95,6 @@ async def main(argv):
         lock = DummyLock(lock_id)
 
     lock2 = None
-    lock2_off_task = None
     if gpio2_number is not None:
         lock2 = Lock(lock_id, Gpio(gpio2_number))
 
@@ -117,9 +120,10 @@ async def main(argv):
         rgb_led = RgbLed(int(rgb[0]), int(rgb[1]), int(rgb[2]))
 
     display = None
-    display_counter_task = None
     if display_type:
         display = Display(display_type)
+
+    tasks = {}
 
     # read loop
     async for user_id in reader.read():
@@ -149,6 +153,9 @@ async def main(argv):
             if not lock.value:
 
                 if display:
+                    if tasks.get('clear_display'):
+                        tasks['clear_display'].cancel()
+                    display.clear()
                     display.backlight(True)
                     display.get_canvas().rectangle(display.device.bounding_box, outline="white", fill="black")
                     display.render()
@@ -156,32 +163,36 @@ async def main(argv):
                 # user needs access to this lock to enable it
                 access_granted, res = authenticator.auth(lock, user_id, logger)
                 if access_granted:
-
                     if display:
                         display.get_canvas().text((10, 5), "Welcome", fill="white", stroke_fill="black")
                         display.get_canvas().text((10, 15), res['user_name'], fill="white", stroke_fill="black")
                         display.render()
+                        tasks['display_counter'] = asyncio.create_task(counter_task(display))
 
                     lock.on()
                     if lock2:
-                        if lock2_off_task:
-                            lock2_off_task.cancel()
+                        if tasks.get('lock2_off'):
+                            tasks['lock2_off'].cancel()
                         lock2.on()
-
+                else:
                     if display:
-                        display_counter_task = asyncio.create_task(counter_task(display))
+                        display.get_canvas().text((10, 10), 'access', fill="white", stroke_fill="black")
+                        display.get_canvas().text((10, 20), 'denied', fill="white", stroke_fill="black")
+                        display.render()
+                        tasks['clear_display'] = asyncio.create_task(clear_display(display))
+
             else:
                 # but user does not need access to disable it
                 lock.off()
                 if lock2:
-                    lock2_off_task = asyncio.create_task(lock2.delayed_off(10))
+                    tasks['lock2_off'] = asyncio.create_task(lock2.delayed_off(10))
 
                 authenticator.auth(lock, user_id, logger)
 
                 if display:
                     display.backlight(False)
                     display.clear()
-                    display_counter_task.cancel()
+                    tasks['display_counter'].cancel()
 
             # logger.info("value: %s" % lock.value)
 
