@@ -185,7 +185,7 @@ async def main(argv):
                 # but user does not need access to disable it
                 lock.off()
                 if lock2:
-                    tasks['lock2_off'] = asyncio.create_task(lock2.delayed_off(10))
+                    tasks['lock2_off'] = asyncio.create_task(lock2.delayed_off(60))
 
                 authenticator.auth(lock, user_id, logger)
 
