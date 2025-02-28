@@ -31,6 +31,7 @@ async def counter_task(display: Display):
 
 async def clear_display(display: Display):
     await asyncio.sleep(5)
+    display.backlight(False)
     display.clear()
 
 
